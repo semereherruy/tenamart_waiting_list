@@ -32,4 +32,5 @@ class CreateWaitingListsTable extends Migration
     {
         Schema::dropIfExists('waiting_lists');
     }
+
 }

@@ -70,4 +70,47 @@ class WaitingListController extends Controller
         WaitingList::destroy($id);
         return response()->json(null, 204);
     }
+
+        /**
+     * GET /api/waiting-list/stats
+     */
+    public function stats()
+    {
+        // 1. Total signups
+        $total = WaitingList::count();
+
+        // 2. Count per source
+        $bySource = WaitingList::query()
+            ->selectRaw('signup_source, COUNT(*) as count')
+            ->groupBy('signup_source')
+            ->get()
+            ->pluck('count', 'signup_source');
+
+        // 3. Daily counts for last 30 days
+        $start = now()->subDays(29)->startOfDay();
+        $daily = WaitingList::query()
+            ->where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->pluck('count', 'date');
+
+        // 4. Peak signup day
+        $peak = WaitingList::query()
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderByDesc('count')
+            ->limit(1)
+            ->first(['date', 'count']);
+
+        return response()->json([
+            'total_signups'    => $total,
+            'signups_by_source'=> $bySource,
+            'daily_trend'      => $daily,
+            'peak_day'         => $peak ? $peak->date : null,
+            'peak_count'       => $peak ? $peak->count : 0,
+        ]);
+    }
+
 }
