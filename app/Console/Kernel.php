@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Console\Commands\SendWeeklyReport;
 
 class Kernel extends ConsoleKernel
 {
@@ -15,8 +16,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('report:weekly-waiting-list')->weeklyOn(1, '08:00');
     }
+
+    protected $commands = [
+        SendWeeklyReport::class,
+    ];
+
 
     /**
      * Register the commands for the application.
@@ -29,4 +35,12 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+    /**
+     * The Artisan commands provided by your application.
+     *
+     * @var array
+     */
+
+
 }
