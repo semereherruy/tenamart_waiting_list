@@ -82,7 +82,7 @@ php artisan serve
 
 ## ✅ API Testing with Postman
 
-Import the `postman_collection.json` (if available) or use the following endpoints manually:
+Use the following endpoints manually:
 
 ### 🔐 Auth Routes
 
