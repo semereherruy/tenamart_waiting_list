@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\WaitingList;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WaitingListController extends Controller
 {
@@ -111,6 +112,67 @@ class WaitingListController extends Controller
             'peak_day'         => $peak ? $peak->date : null,
             'peak_count'       => $peak ? $peak->count : 0,
         ]);
+    }
+
+
+
+    public function exportCsv()
+    {
+        // Prepare the stats data
+        $total = WaitingList::count();
+        $bySource = WaitingList::query()
+            ->selectRaw('signup_source, COUNT(*) as count')
+            ->groupBy('signup_source')
+            ->pluck('count', 'signup_source')
+            ->toArray();
+
+        $start = now()->subDays(29)->startOfDay();
+        $daily = WaitingList::query()
+            ->where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->pluck('count', 'date')
+            ->toArray();
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="waiting_list_stats.csv"',
+        ];
+
+        $callback = function() use ($total, $bySource, $daily) {
+            $handle = fopen('php://output', 'w');
+
+            // Write header row
+            fputcsv($handle, ['Metric', 'Value']);
+
+            // Total signups
+            fputcsv($handle, ['Total Signups', $total]);
+
+            // Blank line
+            fputcsv($handle, []);
+
+            // Signups by source
+            fputcsv($handle, ['Signups by Source']);
+            fputcsv($handle, ['Source', 'Count']);
+            foreach ($bySource as $source => $count) {
+                fputcsv($handle, [$source, $count]);
+            }
+
+            // Blank line
+            fputcsv($handle, []);
+
+            // Daily trend
+            fputcsv($handle, ['Daily Trend (Last 30 Days)']);
+            fputcsv($handle, ['Date', 'Count']);
+            foreach ($daily as $date => $count) {
+                fputcsv($handle, [$date, $count]);
+            }
+
+            fclose($handle);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
     }
 
 }

@@ -16,4 +16,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->get('waiting-list/stats', [WaitingListController::class, 'stats']);
 
+Route::middleware('auth:sanctum')
+     ->get('waiting-list/stats/csv', [WaitingListController::class, 'exportCsv']);
 
